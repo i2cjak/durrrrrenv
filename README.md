@@ -5,11 +5,13 @@ A zsh alternative to direnv that automatically loads environment configurations 
 ## Features
 
 - **Transparent zsh integration** - Hooks into zsh to automatically check for `.local_environment` files
-- **Smart parent directory search** - Automatically finds and loads parent directory environments when you cd deep into a project
+- **Smart parent directory search** - Automatically finds and loads parent directory environments when you cd deep into a project (limited to 5 levels for performance)
+- **Blazing fast** - Sub-millisecond directory searches with zero-allocation fast path
 - **Automatic cleanup** - Deactivates environments when you leave the directory
 - **Security-first** - Requires explicit confirmation before executing any environment file
 - **File integrity checking** - Detects when `.local_environment` files change and re-prompts for approval
 - **Simple syntax** - Easy-to-understand commands for common tasks
+- **Performance monitoring** - Built-in benchmark and verbose modes to measure overhead
 
 ## Installation
 
@@ -145,6 +147,36 @@ Commands to execute:
 
 #### `durrrrrenv hook`
 Output the zsh hook script (used in `eval "$(durrrrrenv hook)"`).
+
+#### `durrrrrenv bench`
+Benchmark the performance of directory search operations.
+
+```bash
+durrrrrenv bench                # Run 1000 iterations (default)
+durrrrrenv bench -n 10000       # Run 10000 iterations
+```
+
+Output shows average time per search, searches per second, and search depth statistics.
+
+#### `durrrrrenv check --verbose`
+Check with detailed performance metrics.
+
+```bash
+durrrrrenv check --verbose
+```
+
+Shows search time, depth found, and total execution time.
+
+## Performance
+
+durrrrrenv is designed for minimal overhead on every directory change:
+
+- **Fast parent directory search**: Limited to 5 levels up (configurable in code via `MAX_SEARCH_DEPTH`)
+- **Zero-allocation fast path**: Uses `Path` references instead of cloning PathBufs during search
+- **Early termination**: Stops immediately when `.local_environment` is found or max depth reached
+- **Typical performance**: Sub-millisecond search times on modern systems
+
+Use `durrrrrenv bench` to measure performance on your system.
 
 ## How It Works
 
