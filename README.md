@@ -178,10 +178,17 @@ durrrrrenv is designed for minimal overhead on every directory change:
 - **Typical performance**: Sub-millisecond search times on modern systems
 
 **Hook Optimizations:**
+- **Fast-path file check**: Searches for `.local_environment` in shell before spawning binary
+- **Subdirectory skip**: No checks when moving within an already-active environment
 - Zero external process spawns (no grep, head, cut, etc.)
 - Pure zsh pattern matching with `[[ ]]` and parameter expansion
 - Line-by-line processing using zsh array flags `${(@f)output}`
 - Early returns to avoid unnecessary processing
+
+The hook only calls `durrrrrenv check` when:
+1. You're not already in an active environment's subdirectory tree
+2. A `.local_environment` file exists within 5 parent directories
+3. Otherwise, it's pure zsh with instant response
 
 Use `durrrrrenv bench` to measure performance on your system.
 
@@ -282,8 +289,7 @@ cd my-project/src/lib/utils
 </p>
 
 <p align="center">
-  Specialists in low power IoT design, wearable applications, high-speed applications, and RF/SDR solutions.<br/>
-  From concept to production, we build the hardware that matters.
+  Specialists in low power IoT design, wearable applications, high-speed applications.<br/>
 </p>
 
 <p align="center">

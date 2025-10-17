@@ -37,6 +37,36 @@ _durrrrrenv_check() {
 
     _DURRRRRENV_LAST_DIR="$current_dir"
 
+    # Fast-path: If we're still within the active environment directory tree,
+    # we don't need to do anything (environment is already loaded)
+    if [[ -n "$_DURRRRRENV_ACTIVE_DIR" ]] && [[ "$current_dir" == "$_DURRRRRENV_ACTIVE_DIR"/* ]]; then
+        return 0
+    fi
+
+    # Fast-path: Check if .local_environment exists anywhere in the tree
+    # before spawning the durrrrrenv process. Avoids process spawn overhead.
+    local check_dir="$current_dir"
+    local found_env=0
+    local depth=0
+
+    while [[ $depth -lt 5 ]]; do
+        if [[ -f "$check_dir/.local_environment" ]]; then
+            found_env=1
+            break
+        fi
+
+        # Move to parent directory
+        local parent_dir="${check_dir:h}"
+        [[ "$parent_dir" == "$check_dir" ]] && break  # Reached root
+        check_dir="$parent_dir"
+        ((depth++))
+    done
+
+    # If no .local_environment file found in tree, skip durrrrrenv entirely
+    if [[ $found_env -eq 0 ]]; then
+        return 0
+    fi
+
     # Run durrrrrenv check and capture output
     local output
     output=$(durrrrrenv check 2>&1)
