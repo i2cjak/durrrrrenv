@@ -75,29 +75,56 @@ fn get_env_file_path(dir: &PathBuf) -> PathBuf {
     dir.join(".local_environment")
 }
 
+/// Search up the directory tree for a .local_environment file
+/// Returns (env_file_path, source_directory) if found
+fn find_env_file_in_parents(start_dir: &PathBuf) -> Option<(PathBuf, PathBuf)> {
+    let mut current = start_dir.clone();
+
+    loop {
+        let env_file = current.join(".local_environment");
+        if env_file.exists() {
+            return Some((env_file, current));
+        }
+
+        // Try to go to parent directory
+        if let Some(parent) = current.parent() {
+            current = parent.to_path_buf();
+        } else {
+            // Reached root, no file found
+            return None;
+        }
+    }
+}
+
 fn check_command(dir: Option<PathBuf>) -> Result<()> {
     let working_dir = get_working_dir(dir)?;
-    let env_file = get_env_file_path(&working_dir);
 
-    // If no .local_environment file exists, do nothing
-    if !env_file.exists() {
+    // Search up the tree for .local_environment file
+    let search_result = find_env_file_in_parents(&working_dir);
+
+    if search_result.is_none() {
         return Ok(());
     }
+
+    let (env_file, source_dir) = search_result.unwrap();
 
     let content = fs::read_to_string(&env_file)
         .context("Failed to read .local_environment file")?;
 
     let config = Config::load()?;
 
-    if config.is_allowed(&working_dir, &content) {
+    if config.is_allowed(&source_dir, &content) {
         // Parse and execute
         let commands = Parser::parse(&content)?;
-        let script = Executor::generate_shell_script(&commands, &working_dir)?;
+        let script = Executor::generate_shell_script(&commands, &source_dir)?;
+
+        // Output the source directory first (for the hook to track), then the script
+        println!("DURRRRRENV_DIR={}", source_dir.display());
         print!("{}", script);
     } else {
         // Prompt user to allow
-        eprintln!("durrrrrenv: .local_environment file found but not allowed");
-        eprintln!("durrrrrenv: Run 'eval \"$(durrrrrenv allow)\"' to allow and load it");
+        eprintln!("durrrrrenv: .local_environment file found in {} but not allowed", source_dir.display());
+        eprintln!("durrrrrenv: Run 'cd {} && eval \"$(durrrrrenv allow)\"' to allow and load it", source_dir.display());
         eprintln!("durrrrrenv: File contents:");
         eprintln!("---");
         eprintln!("{}", content);
@@ -144,6 +171,9 @@ fn allow_command(dir: Option<PathBuf>) -> Result<()> {
 
     // Generate and output the shell script to execute immediately
     let script = Executor::generate_shell_script(&commands, &working_dir)?;
+
+    // Output the source directory first (for the hook to track), then the script
+    println!("DURRRRRENV_DIR={}", working_dir.display());
     print!("{}", script);
 
     Ok(())

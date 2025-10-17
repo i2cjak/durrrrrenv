@@ -49,8 +49,23 @@ _durrrrrenv_check() {
 
     # If check returned shell code to evaluate, do it
     if [[ $exit_code -eq 0 ]] && [[ -n "$output" ]] && ! echo "$output" | grep -q "^durrrrrenv:"; then
+        # Extract DURRRRRENV_DIR if present
+        local env_dir=""
+        if echo "$output" | grep -q "^DURRRRRENV_DIR="; then
+            env_dir=$(echo "$output" | grep "^DURRRRRENV_DIR=" | head -1 | cut -d= -f2-)
+            # Remove the DURRRRRENV_DIR line from output before eval
+            output=$(echo "$output" | grep -v "^DURRRRRENV_DIR=")
+        fi
+
+        # Evaluate the script
         eval "$output"
-        _DURRRRRENV_ACTIVE_DIR="$current_dir"
+
+        # Set the active directory to the env source directory (or current if not specified)
+        if [[ -n "$env_dir" ]]; then
+            _DURRRRRENV_ACTIVE_DIR="$env_dir"
+        else
+            _DURRRRRENV_ACTIVE_DIR="$current_dir"
+        fi
     fi
 }
 

@@ -5,6 +5,7 @@ A zsh alternative to direnv that automatically loads environment configurations 
 ## Features
 
 - **Transparent zsh integration** - Hooks into zsh to automatically check for `.local_environment` files
+- **Smart parent directory search** - Automatically finds and loads parent directory environments when you cd deep into a project
 - **Automatic cleanup** - Deactivates environments when you leave the directory
 - **Security-first** - Requires explicit confirmation before executing any environment file
 - **File integrity checking** - Detects when `.local_environment` files change and re-prompts for approval
@@ -151,12 +152,16 @@ Output the zsh hook script (used in `eval "$(durrrrrenv hook)"`).
 2. If leaving a directory with an active environment:
    - Python venv is deactivated automatically
    - Environment is cleaned up
-3. If a `.local_environment` file exists in the new directory:
+3. `durrrrrenv check` searches for a `.local_environment` file:
+   - First checks the current directory
+   - If not found, searches up the directory tree to find the nearest parent with a `.local_environment` file
+   - This means you can `cd` directly into `my-project/src/lib/utils/` and it will find and load `my-project/.local_environment`
+4. If a `.local_environment` file is found:
    - If it's allowed and hasn't changed: commands are executed
    - If it's not allowed or has changed: you're prompted to allow it
-4. Allowed directories are tracked in `~/.config/durrrrrenv/allowed.json`
-5. File contents are hashed to detect changes
-6. Subdirectories inherit the parent's environment (no deactivation when entering subdirectories)
+5. Allowed directories are tracked in `~/.config/durrrrrenv/allowed.json`
+6. File contents are hashed to detect changes
+7. Subdirectories inherit the parent's environment (no deactivation when entering subdirectories)
 
 ## Security
 
@@ -218,6 +223,12 @@ cd my-project
 durrrrrenv status
 # Directory: /home/user/my-project
 # Status: Allowed
+
+# Parent directory search - cd directly into deep subdirectory
+cd /tmp
+mkdir -p my-project/src/lib/utils
+cd my-project/src/lib/utils
+# (.venv) is activated! Searched up and found /tmp/my-project/.local_environment
 ```
 
 ---
