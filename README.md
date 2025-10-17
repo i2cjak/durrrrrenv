@@ -174,7 +174,14 @@ durrrrrenv is designed for minimal overhead on every directory change:
 - **Fast parent directory search**: Limited to 5 levels up (configurable in code via `MAX_SEARCH_DEPTH`)
 - **Zero-allocation fast path**: Uses `Path` references instead of cloning PathBufs during search
 - **Early termination**: Stops immediately when `.local_environment` is found or max depth reached
+- **Optimized zsh hook**: Uses pure zsh built-ins (no external grep/sed/awk processes)
 - **Typical performance**: Sub-millisecond search times on modern systems
+
+**Hook Optimizations:**
+- Zero external process spawns (no grep, head, cut, etc.)
+- Pure zsh pattern matching with `[[ ]]` and parameter expansion
+- Line-by-line processing using zsh array flags `${(@f)output}`
+- Early returns to avoid unnecessary processing
 
 Use `durrrrrenv bench` to measure performance on your system.
 

@@ -42,25 +42,40 @@ _durrrrrenv_check() {
     output=$(durrrrrenv check 2>&1)
     local exit_code=$?
 
-    # If there's output to stderr (warnings/prompts), show it
-    if [[ -n "$output" ]] && echo "$output" | grep -q "^durrrrrenv:"; then
+    # Early exit if no output
+    [[ -z "$output" ]] && return 0
+
+    # Check if output is an error message (starts with "durrrrrenv:")
+    # Using zsh pattern matching instead of grep for speed
+    if [[ "$output" == durrrrrenv:* ]]; then
         echo "$output" >&2
+        return 0
     fi
 
-    # If check returned shell code to evaluate, do it
-    if [[ $exit_code -eq 0 ]] && [[ -n "$output" ]] && ! echo "$output" | grep -q "^durrrrrenv:"; then
-        # Extract DURRRRRENV_DIR if present
-        local env_dir=""
-        if echo "$output" | grep -q "^DURRRRRENV_DIR="; then
-            env_dir=$(echo "$output" | grep "^DURRRRRENV_DIR=" | head -1 | cut -d= -f2-)
-            # Remove the DURRRRRENV_DIR line from output before eval
-            output=$(echo "$output" | grep -v "^DURRRRRENV_DIR=")
+    # Only proceed if check succeeded
+    [[ $exit_code -ne 0 ]] && return 0
+
+    # Extract DURRRRRENV_DIR if present using zsh string manipulation
+    local env_dir=""
+    local script_output=""
+
+    # Process output line by line using zsh built-ins
+    local line
+    for line in "${(@f)output}"; do
+        if [[ "$line" == DURRRRRENV_DIR=* ]]; then
+            # Extract directory using parameter expansion
+            env_dir="${line#DURRRRRENV_DIR=}"
+        else
+            # Accumulate script lines
+            script_output="${script_output}${line}"$'\n'
         fi
+    done
 
-        # Evaluate the script
-        eval "$output"
+    # Evaluate the script if we have output
+    if [[ -n "$script_output" ]]; then
+        eval "$script_output"
 
-        # Set the active directory to the env source directory (or current if not specified)
+        # Set the active directory
         if [[ -n "$env_dir" ]]; then
             _DURRRRRENV_ACTIVE_DIR="$env_dir"
         else
