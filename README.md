@@ -220,6 +220,28 @@ durrrrrenv status
 # Status: Allowed
 ```
 
+---
+
+<p align="center">
+  <img src="logo.png" alt="American Embedded Logo" width="200"/>
+</p>
+
+<p align="center">
+  <strong>PROVIDED BY AMERICAN EMBEDDED</strong><br/>
+  Hardtech Consulting
+</p>
+
+<p align="center">
+  Specialists in low power IoT design, wearable applications, high-speed applications, and RF/SDR solutions.<br/>
+  From concept to production, we build the hardware that matters.
+</p>
+
+<p align="center">
+  <a href="mailto:build@amemb.com">build@amemb.com</a>
+</p>
+
+---
+
 ## License
 
 MIT
