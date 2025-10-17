@@ -5,6 +5,7 @@ A zsh alternative to direnv that automatically loads environment configurations 
 ## Features
 
 - **Transparent zsh integration** - Hooks into zsh to automatically check for `.local_environment` files
+- **Automatic cleanup** - Deactivates environments when you leave the directory
 - **Security-first** - Requires explicit confirmation before executing any environment file
 - **File integrity checking** - Detects when `.local_environment` files change and re-prompts for approval
 - **Simple syntax** - Easy-to-understand commands for common tasks
@@ -79,10 +80,10 @@ python_venv .venv
 ---
 ```
 
-To allow the file:
+To allow the file and execute it immediately:
 
 ```bash
-durrrrrenv allow
+eval "$(durrrrrenv allow)"
 ```
 
 You'll be prompted to confirm:
@@ -97,6 +98,8 @@ Allow this file to be executed? [y/N]: y
 Allowed .local_environment in /home/user/project
 ```
 
+The environment will be loaded immediately after you confirm. If you don't want to execute it immediately, just run `durrrrrenv allow` without the `eval` wrapper.
+
 ### CLI Commands
 
 #### `durrrrrenv check`
@@ -107,10 +110,12 @@ durrrrrenv check
 ```
 
 #### `durrrrrenv allow`
-Allow the `.local_environment` file in the current directory.
+Allow the `.local_environment` file in the current directory. After allowing, it outputs the shell script to stdout, which you can execute immediately with `eval`.
 
 ```bash
-durrrrrenv allow
+eval "$(durrrrrenv allow)"  # Allow and execute immediately
+# or
+durrrrrenv allow            # Just allow without executing
 ```
 
 #### `durrrrrenv deny`
@@ -143,11 +148,15 @@ Output the zsh hook script (used in `eval "$(durrrrrenv hook)"`).
 ## How It Works
 
 1. When you `cd` into a directory, the zsh hook runs `durrrrrenv check`
-2. If a `.local_environment` file exists:
+2. If leaving a directory with an active environment:
+   - Python venv is deactivated automatically
+   - Environment is cleaned up
+3. If a `.local_environment` file exists in the new directory:
    - If it's allowed and hasn't changed: commands are executed
    - If it's not allowed or has changed: you're prompted to allow it
-3. Allowed directories are tracked in `~/.config/durrrrrenv/allowed.json`
-4. File contents are hashed to detect changes
+4. Allowed directories are tracked in `~/.config/durrrrrenv/allowed.json`
+5. File contents are hashed to detect changes
+6. Subdirectories inherit the parent's environment (no deactivation when entering subdirectories)
 
 ## Security
 
@@ -184,16 +193,27 @@ cd my-project
 # durrrrrenv: .local_environment file found but not allowed
 # durrrrrenv: Run 'durrrrrenv allow' to allow it
 
-# Allow it
-durrrrrenv allow
+# Allow it and execute immediately
+eval "$(durrrrrenv allow)"
 # Allow this file to be executed? [y/N]: y
 # Allowed .local_environment in /home/user/my-project
+# (.venv) is now activated and west completion is loaded immediately!
 
-# Now it auto-loads on cd
+# It also auto-loads on cd
 cd ..
-cd my-project
-# (.venv) is now activated and west completion is loaded
+# (.venv) is automatically deactivated when leaving!
 
+cd my-project
+# (.venv) is activated again
+
+# Subdirectories keep the environment active
+cd subdir
+# (.venv) still active
+
+cd ../..
+# (.venv) deactivated when fully leaving the project
+
+cd my-project
 # Check status anytime
 durrrrrenv status
 # Directory: /home/user/my-project

@@ -97,7 +97,7 @@ fn check_command(dir: Option<PathBuf>) -> Result<()> {
     } else {
         // Prompt user to allow
         eprintln!("durrrrrenv: .local_environment file found but not allowed");
-        eprintln!("durrrrrenv: Run 'durrrrrenv allow' to allow it");
+        eprintln!("durrrrrenv: Run 'eval \"$(durrrrrenv allow)\"' to allow and load it");
         eprintln!("durrrrrenv: File contents:");
         eprintln!("---");
         eprintln!("{}", content);
@@ -135,12 +135,16 @@ fn allow_command(dir: Option<PathBuf>) -> Result<()> {
     }
 
     // Parse to validate
-    Parser::parse(&content)?;
+    let commands = Parser::parse(&content)?;
 
     let mut config = Config::load()?;
     config.allow(&working_dir, &content)?;
 
     eprintln!("Allowed .local_environment in {}", working_dir.display());
+
+    // Generate and output the shell script to execute immediately
+    let script = Executor::generate_shell_script(&commands, &working_dir)?;
+    print!("{}", script);
 
     Ok(())
 }
