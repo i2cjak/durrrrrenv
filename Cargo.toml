@@ -2,6 +2,11 @@
 name = "durrrrrenv"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+description = "A zsh alternative to direnv that automatically loads environment configurations when you enter a directory"
+homepage = "https://github.com/i2cjak/durrrrrenv"
+repository = "https://github.com/i2cjak/durrrrrenv"
+readme = "README.md"
 
 [dependencies]
 clap = { version = "4.5", features = ["derive"] }
